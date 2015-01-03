@@ -513,14 +513,14 @@ Also see [[AdvancedOptions]]</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
-<div title="About This Course" creator="msb" modifier="Frank" created="201105020345" modified="201301292359" changecount="10">
+<div title="About This Course" creator="msb" modifier="Frank" created="201105020345" modified="201402091905" changecount="11">
 <pre>Throughout the history of invention curious minds have sought to understand the inner workings of their gadgets. Whether investigating a broken watch, or improving an engine, these people have broken down their goods into their elemental parts to understand how they work. This is Reverse Engineering (RE), and it is done every day from recreating outdated and incompatible software, understanding malicious code, or exploiting weaknesses in software.
 
 In this course we will explore what drives people to reverse engineer software and the methodology and tools used to do it.
 !Author and Acknowledgement
 Original Content 2011: Matthew Briggs
 Original ~Co-Contributor 2011: Xeno Kovah
-Revisions 2013: Frank Poz
+Revisions 2013 and 2014: Frank Poz
 Contact: knowmalware (at) gmail {dot} com
 !Usage
 These materials were developed using [[Tiddly Wiki|http://www.tiddlywiki.com/]]. Some content is hidden to prevent accidental spoilers. In order to understand the thought process of Reverse Engineering, it is very useful to go into these exercises with a clean slate. Walk-throughs may be accessed at any time by removing escape markers (slash-percent open, percent-slash close) from tiddlers such as:
@@ -604,7 +604,7 @@ mov     eax, [ebp+arg_4] ; base
 add     eax, 14h         ; count*increment
 }}}</pre>
 </div>
-<div title="Basic RE Algorithm" creator="Frank" modifier="Frank" created="201302230016" modified="201308102303" changecount="6">
+<div title="Basic RE Algorithm" creator="Frank" modifier="Frank" created="201302230016" modified="201401140036" changecount="7">
 <pre># Gather information
 #* IAT
 #* strings
@@ -613,7 +613,9 @@ add     eax, 14h         ; count*increment
 # Identify ~CALLs
 # Identify algorithms and data structures
 # Pseudo-code it!
+#* if having trouble, draw the memory and CPU and map what happens at each instruction
 # Rename function(s), argument(s), variable(s)
+# Add comments
 # GOTO 2</pre>
 </div>
 <div title="Bit Masks" creator="msb" modifier="Frank" created="201104161629" modified="201309291934" tags="excludeLists tabbed" changecount="5">
@@ -957,7 +959,7 @@ Immediately after entering this function, we are faced with a simple function wi
 
 We can assume that the function called here is the equivalent of ''strcmp''. As you can see it is called 3 times, so let's name it.</pre>
 </div>
-<div title="Coloring Disassembly" creator="msb" modifier="msb" created="201104161426" modified="201104290337" tags="excludeLists tabbed" changecount="8">
+<div title="Coloring Disassembly" creator="msb" modifier="Frank" created="201104161426" modified="201401140031" tags="excludeLists tabbed" changecount="9">
 <pre>!Coloring Disassembly
 Even with the advent of IDA's graph view, basic blocks start to run together in large functions with complicated control flow. IDA allows the coloring of entire basic blocks or individual instructions.
 *Isolate code flows
@@ -973,8 +975,8 @@ Even with the advent of IDA's graph view, basic blocks start to run together in 
 Also of note are the arrows IDA uses to link basic blocks to each other.
 *Green - Branch condition met
 *Red - Branch condition failed
-*Blue (Regular) - Direct flow to next instruction
-*Blue (Bold) - Loop</pre>
+*Blue - Direct flow to next instruction
+*Any of the above in BOLD - Loop</pre>
 </div>
 <div title="Constructors" creator="msb" modifier="msb" created="201104030545" modified="201104161726" tags="excludeLists tabbed" changecount="13">
 <pre>The life of a Class/Struct instance begins with a Constructor and ends with a Destructor. Both of the special methods are optional; however, behind the scenes, there is generally some sort of initialization (perhaps with exceptions such as a global Struct instance).
@@ -1008,7 +1010,7 @@ One of IDA's features that might be overlooked is its highlighting feature. With
 *Where was it last set? read?
 </pre>
 </div>
-<div title="DLL Execution" creator="Frank" modifier="Frank" created="201302212207" modified="201302242304" changecount="5">
+<div title="DLL Execution" creator="Frank" modifier="Frank" created="201302212207" modified="201401140047" changecount="6">
 <pre>!~DllMain
 ~DllMain is the entry-point function of a DLL, which is responsible for initialization of any global variables provided by the library. It is useful to know that when ~DllMain is called, the loader provides three arguments to this initialization function.  The function prototype looks like this:
 {{{
@@ -1024,7 +1026,7 @@ The &lt;&lt;slider chkDllReason [[DllMain fdwReason Argument]] &quot;fdwReason&q
 While malware ~DLLs often do their dirty work from ~DLLMain, the exports of the DLL shouldn't be overlooked. In IDA Pro they can be found in both the Exports window as well as the Entry Points dialog (which ''~Ctrl-E'' reveals) to provide quick access.
 
 !! ~ServiceMain
-A service DLL is loaded by an SVCHOST process.  The SVCHOST process calls the DLL's exported ~ServiceMain function.  This is in addition to the ~DllMain being called upon library loading.  Note that the export does not necessary need to be named ~ServiceMain.  If one of the following REG_SZ values exists, then that is the name of the ~ServiceMain export:
+A service DLL is loaded by an SVCHOST process.  The SVCHOST process calls the DLL's exported ~ServiceMain function.  This is in addition to the ~DllMain being called upon library loading.  Note that the export does not necessary need to be named ~ServiceMain.  If one of the following ~REG_SZ values exists, then that is the name of the ~ServiceMain export:
 * HKLM\System\~CurrentControlSet\Services\''service''\Parameters\~ServiceMain
 * HKLM\System\~CurrentControlSet\Services\''service''\~ServiceMain
 
@@ -1275,7 +1277,7 @@ add     edx, 1
 mov     [ebp+var_4], edx
 }}}</pre>
 </div>
-<div title="From PEB to Kernel32 Base Address" creator="msb" modifier="msb" created="201104040321" modified="201104161717" tags="excludeLists slider" changecount="5">
+<div title="From PEB to Kernel32 Base Address" creator="msb" modifier="Frank" created="201104040321" modified="201401140046" tags="excludeLists slider" changecount="7">
 <pre>The PEB contains a pointer to a PEB_LDR_DATA structure which 
 {{{
 typedef struct _PEB {
@@ -1290,7 +1292,7 @@ The PEB_LDR_DATA structure contains head and tail pointers to three doubly linke
 #0x0C ~InLoadOrderModuleList
 #0x14 ~InMemoryOrderModuleList
 #0x1C ''~InInitializationOrderModuleList''
-These lists refer to the same objects, most useful of which is the last one as the initialization order is predictable. First comes ntdll.dll, followed by kernel32.dll which contains both LoadLibrary and GetProcAddress. The base address of the module follows the ~InInitializationOrderModuleList LIST_ENTRY. Putting it all together:
+These lists refer to the same objects, most useful of which is the last one as the initialization order is predictable. First comes ntdll.dll, followed by kernel32.dll which contains both ~LoadLibrary and ~GetProcAddress. The base address of the module follows the ~InInitializationOrderModuleList ~LIST_ENTRY. Putting it all together:
 
 {{{
 xor   eax, eax                // Set eax = 0
@@ -1301,11 +1303,11 @@ lodsd                         // Load the address of the next flink into eax (ke
 mov   eax, [eax + 0x8]        // Grab the module base address from the list entry
 }}}</pre>
 </div>
-<div title="Fundamentals" creator="Frank" modifier="Frank" created="201301300003" modified="201301300039" changecount="14">
+<div title="Fundamentals" creator="Frank" modifier="Frank" created="201301300003" modified="201401140024" changecount="19">
 <pre>!What is IT!
 ''Reverse Engineering'' - Software Engineering, but backwards!
 
-Algorithms + Data Structures = Program
+&quot;Algorithms + Data Structures = Programs&quot; -- Niklaus Wirth
 
 Reverse Engineering is the ( art | science ) of identifying high level algorithms and data structures in assembly language.
 
@@ -1575,7 +1577,7 @@ See Also:
 call [eax]
 }}}</pre>
 </div>
-<div title="Intermediate Languages" creator="Frank" modifier="Frank" created="201302212330" modified="201303031851" changecount="13">
+<div title="Intermediate Languages" creator="Frank" modifier="Frank" created="201302212330" modified="201409170057" changecount="15">
 <pre>!Programming Languages
 * Interpreted
 * Compiled
@@ -1589,11 +1591,15 @@ call [eax]
 ** Red Gate .Net Reflector (http://www.red-gate.com/products/dotnet-development/reflector/)
 * unless it is obfuscated
 ** ~DotFuscator
+** de4dot (https://github.com/0xd4d/de4dot)
 
 !Java
 * different versions of Java
 * Jode (http://jode.sourceforge.net/)
 * ~JDGui (http://java.decompiler.free.fr/)
+* Procyon (https://bitbucket.org/mstrobel/procyon)
+* CFR (http://www.benf.org/other/cfr/)
+* Krakatau (https://github.com/Storyyeller/Krakatau)
 
 !Flash
 * ~ActionScript
@@ -1626,10 +1632,10 @@ call [eax]
 *MSDN is your friend
 *http://www.cplusplus.com/ is another great reference site.</pre>
 </div>
-<div title="Locate the Exports Directory" creator="msb" modifier="msb" created="201104080325" modified="201104161717" tags="excludeLists slider" changecount="23">
+<div title="Locate the Exports Directory" creator="msb" modifier="Frank" created="201104080325" modified="201401140046" tags="excludeLists slider" changecount="24">
 <pre>Once the base address of a module is located, it can be as simple as walking the headers to identify the various features of the binary, most importantly, the exported functions. The PE header structures are well documented on MSDN.
 
-It's important to remember that most of the values stored in the PE headers are actually Relative Virtual Addresses (RVAs), which are offsets from the image base address.
+It's important to remember that most of the values stored in the PE headers are actually Relative Virtual Addresses (~RVAs), which are offsets from the image base address.
 
 *Walk these structures, adding module base pointer at each step
 ##IMAGE_DOS_HEADER.e_lfanew
@@ -2319,8 +2325,8 @@ We've identified some strings and behavior to explore. Launch IDA and load bomb.
 **Loops
 **Conditional Statements</pre>
 </div>
-<div title="Windows API resolution" creator="msb" modifier="msb" created="201104031419" modified="201104161727" changecount="10">
-<pre>When developers need to access system resources (e.g. disk, network), they typically use shared libraries provided with the operating system or third party software. In Windows, much of the core functionality is provided by ''kernel32.dll'' and other Dynamically Linked Libraries. In order to use these libraries, a program must load the library into its process space (LoadLibrary), and locate particular function addresses that are required (GetProcAddress).
+<div title="Windows API resolution" creator="msb" modifier="Frank" created="201104031419" modified="201401140042" changecount="11">
+<pre>When developers need to access system resources (e.g. disk, network), they typically use shared libraries provided with the operating system or third party software. In Windows, much of the core functionality is provided by ''kernel32.dll'' and other Dynamically Linked Libraries. In order to use these libraries, a program must load the library into its process space (~LoadLibrary), and locate particular function addresses that are required (~GetProcAddress).
 There are multiple methods used to resolve dynamic library functions, three of which are:
 &lt;&lt;tabs id &quot;Relying on the Loader&quot; &quot;&quot; [[Windows API resolution: OS Loader]]
 &quot;Manual Load&quot; &quot;&quot; [[Windows API resolution: Manual Load]]
@@ -2330,8 +2336,8 @@ There are multiple methods used to resolve dynamic library functions, three of w
 *[[Manual Load|Windows API resolution: Manual Load]]
 *[[Hunt and Peck|Windows API resolution: Search and Load]] %/</pre>
 </div>
-<div title="Windows API resolution: Manual Load" creator="msb" modifier="msb" created="201104031713" modified="201104161727" tags="excludeLists tabbed" changecount="2">
-<pre>Rather than force the OS to load functions at start up, libraries can be loaded on-demand using the LoadLibrary/GetProcAddress functions.
+<div title="Windows API resolution: Manual Load" creator="msb" modifier="Frank" created="201104031713" modified="201401140044" tags="excludeLists tabbed" changecount="4">
+<pre>Rather than force the OS to load functions at start up, libraries can be loaded on-demand using the ~LoadLibrary / ~GetProcAddress functions.
 {{{
 typedef int
 (WINAPI *MessageBoxPtr)(
