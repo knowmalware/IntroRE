@@ -513,14 +513,15 @@ Also see [[AdvancedOptions]]</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
-<div title="About This Course" creator="msb" modifier="msb" created="201105020345" modified="201201270458" changecount="8">
+<div title="About This Course" creator="msb" modifier="Frank" created="201105020345" modified="201301292359" changecount="10">
 <pre>Throughout the history of invention curious minds have sought to understand the inner workings of their gadgets. Whether investigating a broken watch, or improving an engine, these people have broken down their goods into their elemental parts to understand how they work. This is Reverse Engineering (RE), and it is done every day from recreating outdated and incompatible software, understanding malicious code, or exploiting weaknesses in software.
 
 In this course we will explore what drives people to reverse engineer software and the methodology and tools used to do it.
 !Author and Acknowledgement
-Matthew Briggs
+Original Content 2011: Matthew Briggs
+Original ~Co-Contributor 2011: Xeno Kovah
+Revisions 2013: Frank Poz
 Contact: knowmalware (at) gmail {dot} com
-Special Thanks to ~Co-Contributor: Xeno Kovah
 !Usage
 These materials were developed using [[Tiddly Wiki|http://www.tiddlywiki.com/]]. Some content is hidden to prevent accidental spoilers. In order to understand the thought process of Reverse Engineering, it is very useful to go into these exercises with a clean slate. Walk-throughs may be accessed at any time by removing escape markers (slash-percent open, percent-slash close) from tiddlers such as:
 {{{
@@ -603,12 +604,30 @@ mov     eax, [ebp+arg_4] ; base
 add     eax, 14h         ; count*increment
 }}}</pre>
 </div>
-<div title="Bit Masks" creator="msb" modifier="msb" created="201104161629" modified="201104161724" tags="excludeLists tabbed" changecount="2">
+<div title="Basic RE Algorithm" creator="Frank" modifier="Frank" created="201302230016" modified="201308102303" changecount="6">
+<pre># Gather information
+#* IAT
+#* strings
+#* dynamic analysis
+# Identify function of interest
+# Identify ~CALLs
+# Identify algorithms and data structures
+# Pseudo-code it!
+# Rename function(s), argument(s), variable(s)
+# GOTO 2</pre>
+</div>
+<div title="Bit Masks" creator="msb" modifier="Frank" created="201104161629" modified="201309291934" tags="excludeLists tabbed" changecount="5">
 <pre>*Often operands of logical operations (AND, OR, XOR,...)
 *Used for program control (flags)
 *...and string manipulation (compression, encryption, etc.)
+EXAMPLE 1:
 {{{
 movsx   eax, byte ptr [edx]
+and     eax, 0Fh
+}}}
+EXAMPLE 2:
+{{{
+mov     al, [edx]
 and     eax, 0Fh
 }}}</pre>
 </div>
@@ -989,6 +1008,56 @@ One of IDA's features that might be overlooked is its highlighting feature. With
 *Where was it last set? read?
 </pre>
 </div>
+<div title="DLL Execution" creator="Frank" modifier="Frank" created="201302212207" modified="201302242304" changecount="5">
+<pre>!~DllMain
+~DllMain is the entry-point function of a DLL, which is responsible for initialization of any global variables provided by the library. It is useful to know that when ~DllMain is called, the loader provides three arguments to this initialization function.  The function prototype looks like this:
+{{{
+BOOL WINAPI DllMain(
+  __in  HINSTANCE hinstDLL,
+  __in  DWORD fdwReason,
+  __in  LPVOID lpvReserved
+);
+}}}
+The &lt;&lt;slider chkDllReason [[DllMain fdwReason Argument]] &quot;fdwReason&quot; &quot;&quot;&gt;&gt; argument identifies for what reason the DLL was loaded.
+
+!Exports
+While malware ~DLLs often do their dirty work from ~DLLMain, the exports of the DLL shouldn't be overlooked. In IDA Pro they can be found in both the Exports window as well as the Entry Points dialog (which ''~Ctrl-E'' reveals) to provide quick access.
+
+!! ~ServiceMain
+A service DLL is loaded by an SVCHOST process.  The SVCHOST process calls the DLL's exported ~ServiceMain function.  This is in addition to the ~DllMain being called upon library loading.  Note that the export does not necessary need to be named ~ServiceMain.  If one of the following REG_SZ values exists, then that is the name of the ~ServiceMain export:
+* HKLM\System\~CurrentControlSet\Services\''service''\Parameters\~ServiceMain
+* HKLM\System\~CurrentControlSet\Services\''service''\~ServiceMain
+
+!Executing ~DLLs in a debugger
+At times you may want to analyze a DLL in a debugger. IDA Pros debugger requires an executable to be designated for loading the DLL, while ~ImmDbg / ~OllyDbg come with an application which handles the DLL load.
+
+It is also possible to treat the DLL like an executable. In your favorite PE editor (e.g. CFF Explorer), disable:
+{{{
+IMAGE_FILE_HEADER-&gt;Characteristics IMAGE_FILE_DLL flag (0x1000)
+}}}
+Remember that ~DllMain expects 3 arguments, so if the DLL is treated as in executable, the main function may try to access arguments that don't exist (as they are not available to an executable).
+</pre>
+</div>
+<div title="Debugging: IDA" creator="Frank" modifier="Frank" created="201302230055" modified="201302230055" tags="tabbed" changecount="2">
+<pre>* Starting program
+** setting initial break
+*** program start
+*** ~EntryPoint
+* breakpoints
+* step-into vs step-over
+* attach to process</pre>
+</div>
+<div title="Debugging: OllyDbg" creator="Frank" modifier="Frank" created="201302230056" changecount="1">
+<pre>* Starting program
+* breakpoints
+* step-into vs step-over
+* attach to process
+* ~DLLs
+* Plugins
+** ~OllyDump
+** ~OllyAdvanced
+* ~ImmDbg</pre>
+</div>
 <div title="DefaultTiddlers" creator="msb" modifier="msb" created="201104270135" modified="201105020351" changecount="2">
 <pre>[[About This Course]]</pre>
 </div>
@@ -1023,6 +1092,14 @@ Figure 2: A call to a destructor followed by a call to the delete operator to fr
 <div title="Determining Analysis Scope" creator="msb" modifier="msb" created="201104161622" modified="201104161722" tags="excludeLists tabbed" changecount="2">
 <pre>*Analysts are faced with many paths that are never visited
 *Understanding the input and desired output can help to avoid unnecessary analysis</pre>
+</div>
+<div title="DllMain fdwReason Argument" creator="Frank" modifier="Frank" created="201302212208" tags="excludeLists slider" changecount="1">
+<pre>{{{
+#define DLL_PROCESS_DETACH 0
+#define DLL_PROCESS_ATTACH 1
+#define DLL_THREAD_ATTACH 2
+#define DLL_THREAD_DETACH 3
+}}}</pre>
 </div>
 <div title="Drop It Like it's |-|07" creator="msb" modifier="msb" created="201104290157" modified="201105020129" changecount="26">
 <pre>We've seen how a Windows PE can access shared libraries. Now it's time to test your understanding of API resolution, and the MSDN API documentation.
@@ -1224,6 +1301,46 @@ lodsd                         // Load the address of the next flink into eax (ke
 mov   eax, [eax + 0x8]        // Grab the module base address from the list entry
 }}}</pre>
 </div>
+<div title="Fundamentals" creator="Frank" modifier="Frank" created="201301300003" modified="201301300039" changecount="14">
+<pre>!What is IT!
+''Reverse Engineering'' - Software Engineering, but backwards!
+
+Algorithms + Data Structures = Program
+
+Reverse Engineering is the ( art | science ) of identifying high level algorithms and data structures in assembly language.
+
+!What Can RE Tell Me?
+&lt;&lt;slider chkREQuestions [[What Can RE Tell Me]] &quot;Answers to questions like...&quot; &quot;&quot;&gt;&gt;
+
+!Refresher
+&lt;&lt;slider chkIntroX86 [[Refresher: Intro x86]] &quot;Intro x86&quot; &quot;&quot;&gt;&gt;
+&lt;&lt;slider chkPEFiles [[Refresher: PE Files]] &quot;PE Files&quot; &quot;&quot;&gt;&gt;
+&lt;&lt;slider chkAlgorithms [[Refresher: Algorithms]] &quot;Algorithms&quot; &quot;&quot;&gt;&gt;
+&lt;&lt;slider chkDataStructures [[Refresher: Data Structures]] &quot;Data Types and Structures&quot; &quot;&quot;&gt;&gt;
+</pre>
+</div>
+<div title="Furthering Your Knowledge" creator="Frank" modifier="Frank" created="201302021633" modified="201308101938" changecount="18">
+<pre># ''Reversing: Secrets of Reverse Engineering'' by Eldad Eilam
+#* especially the Appendices
+# Intel 64 and ~IA-32 Architectures Software Developer Manuals (specifically Volumes 2A, 2B, and 2C)
+#* http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+# Websites
+#* https://www.hex-rays.com/contests/2012/index.shtml
+#* http://www.openrce.org
+#* http://www.woodmann.com
+# Your Topic of Interest Here
+#* Ex: If binaries compiled with Visual Studio, install a copy of VS Express, download some code, compile, and compare C++ code to assembly
+#* Reverse Engineering of Malware course material on http://OpenSecurityTraining.info
+# Making your life easier (aka automation)
+#* IDC scripting
+#* IDA plugins
+#* For newer versions of IDA, explore IDA Python
+#* OllyDbg or ~ImmDbg (Immunity Debugger) Plugins
+# Fun
+#* Bomb secret phase
+#* crackme / reverseme games
+</pre>
+</div>
 <div title="Getting to know IDA" creator="msb" modifier="msb" created="201104130331" modified="201104290308" changecount="17">
 <pre>&lt;&lt;tabs id
 &quot;Graphs in R.E.&quot; &quot;&quot; [[Graphs in R.E.]]
@@ -1249,6 +1366,44 @@ It wasn't until IDA 5.0 though that a truly interactive graphing capability came
 *Loops
 *Call Graph
 *Exit blocks</pre>
+</div>
+<div title="How Hardware Breakpoints Work" creator="Frank" modifier="Frank" created="201302212204" modified="201302212206" tags="tabbed" changecount="2">
+<pre>Less obtrusive than software bps, hardware breakpoints use the debug registers which can only be set in privileged mode (ring 0)
+#User requests a hardware breakpoint at an address
+**Uses the linear/virutal address assuming an OS that uses paging
+**Can be local (this process only) or global (all processes)
+#If available, the debugger sets a debug register (dr0-dr3)
+#Once reached, a ''~Single-Step Exception'' occurs
+#The debugger catches the exception and alerts the user
+#The user may resume execution.
+!Weakness
+Code that runs in Ring 0, such as an exception handler, could clear or alter the debug register.
+</pre>
+</div>
+<div title="How Software Breakpoints Work" creator="Frank" modifier="Frank" created="201302212203" modified="201302212206" tags="tabbed" changecount="2">
+<pre>#User requests a software breakpoint at an address
+#The debugger saves the byte at this address and replaces it with an 0xCC (int3)
+#Once execution reaches the address, a ''Breakpoint Exception'' occurs
+#The debugger catches the exception and alerts the user
+**Conditonal breakpoints stop only when condition is met (e.g. eax == 0)
+#Once instructed to resume, the original byte is written over the 0xCC
+#The debugger single-steps, executing the instruction
+#The original byte is saved again, and an 0xCC is placed at the address
+!Side-effects
+*Application code can search through memory for 0xCC
+*Debugger overhead slows execution
+**Timing checks can identify debugger
+*Self-modifying code will assume 0xCC is the original content and read/modify/write it
+</pre>
+</div>
+<div title="How a Debugger Works" creator="Frank" modifier="Frank" created="201302212203" modified="201302230052" changecount="3">
+<pre>&lt;&lt;tabs chkBpBasics
+&quot;How Software Breakpoints Work&quot; &quot;&quot; [[How Software Breakpoints Work]]
+&quot;How Hardware Breakpoints Work&quot; &quot;&quot; [[How Hardware Breakpoints Work]]
+&quot;IDA as Debugger&quot; &quot;&quot; [[Debugging: IDA]]
+&quot;OllyDbg&quot; &quot;&quot; [[Debugging: OllyDbg]]
+&gt;&gt;
+</pre>
 </div>
 <div title="IDA: Defining Code and Data" creator="msb" modifier="msb" created="201104290307" modified="201104290401" tags="excludeLists tabbed" changecount="3">
 <pre>These shortcut keys define/undefined code and common data types at the address at the cursor (or mouse selection):
@@ -1420,6 +1575,45 @@ See Also:
 call [eax]
 }}}</pre>
 </div>
+<div title="Intermediate Languages" creator="Frank" modifier="Frank" created="201302212330" modified="201303031851" changecount="13">
+<pre>!Programming Languages
+* Interpreted
+* Compiled
+* ~Just-In-Time Compiled
+
+!MSIL
+* ~PEiD, CFF Explorer, strings
+* &quot;easy&quot; to reverse
+** ildasm
+** ~ILSpy (http://ilspy.net/)
+** Red Gate .Net Reflector (http://www.red-gate.com/products/dotnet-development/reflector/)
+* unless it is obfuscated
+** ~DotFuscator
+
+!Java
+* different versions of Java
+* Jode (http://jode.sourceforge.net/)
+* ~JDGui (http://java.decompiler.free.fr/)
+
+!Flash
+* ~ActionScript
+** different versions
+* IDA Plugin from 2009 Plugin Contest
+* swfdump
+* flasm / flare
+* ASV / ~AS3 Sorcerer (not tested)
+* ffdec (not tested)
+* ~RABCDAsm (not tested)</pre>
+</div>
+<div title="Know Your Tools" creator="Frank" modifier="Frank" created="201301300042" modified="201301300042" changecount="3">
+<pre>* ~TiddlyWiki
+* ~PEiD
+* CFF Explorer
+** Import Directory
+** Identifier
+** Resource Editor
+* [[Getting to know IDA]]</pre>
+</div>
 <div title="Leaf Functions" creator="msb" modifier="msb" created="201104290342" modified="201104290350" tags="excludeLists slider" changecount="3">
 <pre>When a function has no calls it is a leaf node. The buck stops here, and there is no more spidering to do. Generally these functions perform some sort of mathematical computation or are (Class) accessors. However, sometimes these functions will contain instructions such as syscall or interrupts (int) which are used to enter kernel mode or signal a hardware device (e.g., for I/O). </pre>
 </div>
@@ -1470,10 +1664,12 @@ xor   eax, eax                // Set eax = 0
 mov   eax, fs:[eax+0x30]      // Locate the PEB
 }}}</pre>
 </div>
-<div title="MainMenu" creator="msb" modifier="msb" created="201103030324" modified="201105020351" changecount="25">
+<div title="MainMenu" creator="msb" modifier="Frank" created="201103030324" modified="201303021937" changecount="41">
 <pre>[[About This Course]]
+[[Fundamentals]]
+[[Know Your Tools]]
 [[Where to begin?]]
-[[Getting to know IDA]]
+[[Basic RE Algorithm]]
 [[Analyzing a Function]]
 [[Bomb Lab Intro|Bomb Lab]]
 [[Bomb Lab Phase 1]]
@@ -1482,9 +1678,12 @@ mov   eax, fs:[eax+0x30]      // Locate the PEB
 [[Bomb Lab Phase 4]]
 [[Bomb Lab Phase 5]]
 [[Bomb Lab Phase 6]]
+[[Analyzing C++|Recognizing Object Oriented Code  in compiled C++]]
+[[Debugging|How a Debugger Works]]
 [[API Resolution|Windows API resolution]]
-[[The Dropper|Drop It Like it's |-|07]]
-[[Analyzing C++|Recognizing Object Oriented Code  in compiled C++]]</pre>
+[[Dealing with DLLs|DLL Execution]]
+[[Other Languages|Intermediate Languages]]
+[[On Your Own|Furthering Your Knowledge]]</pre>
 </div>
 <div title="Methods" creator="msb" modifier="msb" created="201104022126" modified="201104022142" changecount="2">
 <pre>A method, is a function (or subroutine) that is associated with a class or object.
@@ -1524,10 +1723,18 @@ At times an analyst has to decide how far down the rabbit hole to go. We have pl
 
 We can return to the main function by pressing the ''Escape'' key, and try to identify the [[logic that checks our input|Checking the password]].</pre>
 </div>
-<div title="Nested Loops" creator="msb" modifier="msb" created="201104161632" modified="201104161725" tags="excludeLists tabbed" changecount="2">
+<div title="Nested Loops" creator="msb" modifier="Frank" created="201104161632" modified="201309291942" tags="excludeLists tabbed" changecount="4">
 <pre>*Coloring can help to clarify
 **Be consistent in your coloring methodology
-*Write pseudo-code, one loop at a time</pre>
+*Collapse and Analyze algorithm:
+*# Find bold line (that's the loop)
+*# Start at bold line's arrow head and follow it backwards
+*#* If encounter another bold line's arrow head, collapse that inner loop first
+*# Collapse loop
+*# After all loops have been collapsed, analyze starting at the beginning of the function
+*#* Pseudo-code it
+*#* Re-collapse
+*#* Next</pre>
 </div>
 <div title="Object Member Access" creator="msb" modifier="msb" created="201104030140" modified="201104161726" tags="excludeLists tabbed" changecount="14">
 <pre>When a Class or Struct instance is created, a block of contiguous memory is created to store it's object's member variables. A pointer, commonly referred to as ''this'', points to the base address of the structure.
@@ -1619,10 +1826,70 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 [[Destructors]]
 [[Virtual Function Tables]] %/</pre>
 </div>
-<div title="Recursion" creator="msb" modifier="msb" created="201104161626" modified="201104161723" tags="excludeLists tabbed" changecount="2">
+<div title="Recursion" creator="msb" modifier="Frank" created="201104161626" modified="201309291932" tags="excludeLists tabbed" changecount="4">
 <pre>*Function that calls itself
 *May take the form of circular call relationship
-*Determine what the base cases are.</pre>
+*Determine what the base cases are.
+*Example of when you might see recursion:
+** Divide and conquer algorithms
+** Sorting
+** Tree or graph traversal, such as directory or file search</pre>
+</div>
+<div title="Refresher: Algorithms" creator="Frank" modifier="Frank" created="201301300036" modified="201301300036" tags="excludeLists" changecount="2">
+<pre>* assignment
+* arithmetic operators
+** +, -, *, /, %, **, |, &amp;, ^
+* conditionals
+** if
+** switch..case
+* loops
+** for
+** do..while / while
+* recursion
+* searching
+* selecting
+* sorting</pre>
+</div>
+<div title="Refresher: Data Structures" creator="Frank" modifier="Frank" created="201301300038" tags="excludeLists" changecount="1">
+<pre>* int, double, float
+* char
+* pointer
+* global vs local
+* array, associative array (hash)
+* string
+* struct
+* linked list
+* stack, queue
+* class / object
+** member
+** function
+** inheritance
+* iterator
+* tree, graph</pre>
+</div>
+<div title="Refresher: Intro x86" creator="Frank" modifier="Frank" created="201301300026" modified="201308101939" tags="excludeLists" changecount="6">
+<pre>* negative numbers, two's complement
+* endian-ness
+** network byte order is...?
+* function return value is (typically) stored in...
+* function arguments are stored...
+* calling conventions
+** stack clean-up
+* CMP is SUB, TEST is AND
+* XOR
+* Reading the [[Intel Manuals|Furthering Your Knowledge]]
+* effects of compiler options
+* disassembling
+** how accurate is it?
+** what are the two basic algorithms?
+* local vars represented as [ebp+var_name]
+* array reference represented as [base + index*scale + offset]</pre>
+</div>
+<div title="Refresher: PE Files" creator="Frank" modifier="Frank" created="201301300033" tags="excludeLists" changecount="1">
+<pre>* Header(s)
+* Sections
+** do the names mean anything? do they matter?
+* CFF Explorer</pre>
 </div>
 <div title="Regular Functions" creator="msb" modifier="msb" created="201104290345" modified="201104290348" tags="excludeLists slider" changecount="2">
 <pre>A regular function is a non-library function, or a static library function that no FLIRT signature exists for. This is typically user or compiler defined and where you're biggest challenge lies. They have dummy names (e.g., &quot;sub_401036&quot;) which contain their Virtual-Memory Address.</pre>
@@ -1652,10 +1919,15 @@ add   edx, eax                // Add the new byte to the accumulator
 <div title="SiteTitle" creator="msb" modifier="msb" created="201104111457" modified="201105020237" changecount="7">
 <pre>Foundations of Software R.E.</pre>
 </div>
-<div title="String Decoding" creator="msb" modifier="msb" created="201104161629" modified="201104161724" tags="excludeLists tabbed" changecount="2">
-<pre>*Generally byte operations
-*ASCII Table is your friend
-**Keep one hand (If you haven't memorized it ;-)</pre>
+<div title="String Decoding" creator="msb" modifier="Frank" created="201104161629" modified="201303031920" tags="excludeLists tabbed" changecount="8">
+<pre>* General algorithm
+*# read from memory/buffer
+*# transform
+*# write to memory/buffer
+* Source and destination may be same (overwriting) or different
+* May be single byte or multi-byte operations
+* ASCII Table is your friend, so keep one on hand (If you haven't memorized it ;-)
+</pre>
 </div>
 <div title="Structures" creator="msb" modifier="msb" created="201104161632" modified="201104161725" tags="excludeLists tabbed" changecount="2">
 <pre>*Define structures as you come across member usage.
@@ -1912,9 +2184,11 @@ member_id = AddStrucMember(
 .BGError	  { background-color:[[ColorPalette::Error]];	 	}
 </pre>
 </div>
-<div title="Switch Case" creator="msb" modifier="msb" created="201104161621" modified="201104161722" tags="excludeLists tabbed" changecount="2">
-<pre>*Switch cases use a jump table array
-*The case is translated into an index within the table and multiple by the size of a pointer.
+<div title="Switch Case" creator="msb" modifier="Frank" created="201104161621" modified="201303031911" tags="excludeLists tabbed" changecount="5">
+<pre>*Switch cases are compiled into different styles, depending on the compiler, optimization settings, and case values
+** may look like nested if..else if..else if..else..
+** may use a jump table array
+*For a ''jump table'', the case is translated into an index within the table and multipled by the size of a pointer.
 {{{
 mov     edx, [ebp+var_18]
 jmp     ds:off_401328[edx*4]
@@ -1992,6 +2266,17 @@ Here the object pointer, is accessed, followed by a few pointer accesses and a c
 | name[4-7] |||
 | ... |||
 }}}</pre>
+</div>
+<div title="What Can RE Tell Me" creator="Frank" modifier="Frank" created="201301300016" modified="201301300018" tags="excludeLists" changecount="2">
+<pre>* What is causing my program to crash or act differently than intended?
+* Where does a particular observed or expected behavior happen in the program?
+* Is there anything interesting in this file? (YDIMV)
+* What does this file do?
+* How do I get this file to run?
+* What happens to my user input or file input or network input?
+* How do I get this program to do X?
+* How can I use parts of this program in my own program?
+* Can I make this more efficient?</pre>
 </div>
 <div title="What did we learn from executing bomb.exe?" creator="msb" modifier="msb" created="201102102354" modified="201105020234" tags="excludeLists tabbed" changecount="4">
 <pre>*It displays a message:
