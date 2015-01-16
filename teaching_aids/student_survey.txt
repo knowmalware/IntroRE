@@ -1,0 +1,53 @@
+﻿1. Which programming languages are you comfortable programming in or
+   at least could "get by" in?
+   C
+   C++
+   Visual C++
+   Visual C#
+   Pascal
+   Delphi
+   Java
+   ActionScript
+   HTML5
+   JavaScript
+   Perl
+   Python
+   BASH
+   Lisp
+   Scheme
+   Ada
+   Other(s):
+
+
+2. What do you plan to use RE skillz for?  (ex: malware analysis,
+   vulnerability discovery, software protection "testing")
+
+
+3. Have you used IDA Pro or Free before, or any other RE tools?
+
+
+4. How often do you do RE now?  (daily, weekly, occasionally)
+
+
+5. Which of these OpenSecurityTraining.info classes have you taken?
+   Intro Intel x86
+   Intermediate Intel x86
+   Advanced x86
+   Life of Binaries
+   Intro to Software Exploits
+   Exploits 2
+   Rootkits
+   Malware Dynamic Analysis
+
+
+6. Which of these courses have you taken at the high school or college level?
+   If you have work experience in these subjects, indicate number of years.
+
+                                +---------------+-----------------------+
+                                | HS / College  | Work experience (yrs) |
++-----------------------------------------------+-----------------------+
+| Software Engineering          |               |                       |
++-------------------------------+---------------+-----------------------+
+| Socket-level programming      |               |                       |
+|   (ex: Comp Networks)         |               |                       |
++-------------------------------+---------------+-----------------------+
